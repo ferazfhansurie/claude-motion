@@ -1,0 +1,54 @@
+{
+  "name": "motionboards-mcp",
+  "version": "1.0.0",
+  "description": "MotionBoards MCP server for Claude Code. Generate AI images and videos with 30+ models, drop them straight onto your MotionBoards canvas — without leaving the terminal.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "motionboards-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "mcp",
+    "model-context-protocol",
+    "motionboards",
+    "ai-video",
+    "ai-image",
+    "veo",
+    "nano-banana",
+    "creative"
+  ],
+  "author": "Adletic Agency <hello@adleticagency.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ferazfhansurie/motionboards-mcp"
+  },
+  "homepage": "https://github.com/ferazfhansurie/motionboards-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/ferazfhansurie/motionboards-mcp/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.28.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.2"
+  }
+}
