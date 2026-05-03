@@ -1,11 +1,11 @@
 {
-  "name": "motionboards-mcp",
+  "name": "claude-motion",
   "version": "1.0.0",
-  "description": "MotionBoards MCP server for Claude Code. Generate AI images and videos with 30+ models, drop them straight onto your MotionBoards canvas — without leaving the terminal.",
+  "description": "AI image and video generation inside Claude Code. Powered by MotionBoards — 30+ models (Veo, Nano Banana, Seedance, Sync Lipsync), and the result lands directly on your canvas.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "motionboards-mcp": "dist/index.js"
+    "claude-motion": "dist/index.js"
   },
   "files": [
     "dist",
@@ -34,11 +34,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ferazfhansurie/motionboards-mcp"
+    "url": "https://github.com/ferazfhansurie/claude-motion"
   },
-  "homepage": "https://github.com/ferazfhansurie/motionboards-mcp#readme",
+  "homepage": "https://github.com/ferazfhansurie/claude-motion#readme",
   "bugs": {
-    "url": "https://github.com/ferazfhansurie/motionboards-mcp/issues"
+    "url": "https://github.com/ferazfhansurie/claude-motion/issues"
   },
   "engines": {
     "node": ">=20"

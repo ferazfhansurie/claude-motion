@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { apiCall, type ClientConfig } from "../lib/client.js";
+import { placeAssetOnBoard } from "../lib/place-on-board.js";
 
 export const generateSchema = {
   model: z
     .string()
     .min(1)
     .describe(
-      "The model id (e.g. 'fal-ai/nano-banana-2', 'fal-ai/veo3.1/fast/image-to-video'). Use the `models` tool to discover the catalog.",
+      "The model id (e.g. 'gemini-3.1-flash-image-preview', 'veo-3.1-fast-generate-preview/i2v'). Use the `models` tool to discover the catalog.",
     ),
   prompt: z
     .string()
@@ -40,6 +41,19 @@ export const generateSchema = {
     .describe(
       "Free-form model-specific options (aspect_ratio, duration, resolution, generate_audio, etc.). Forwarded as-is.",
     ),
+  add_to_board: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe(
+      "If true (default), the completed asset is auto-placed on the active MotionBoards canvas so it shows up in the UI without a manual drag. Only applies to sync generations — async (Veo) jobs are placed by the `status` tool when they complete.",
+    ),
+  board_id: z
+    .string()
+    .optional()
+    .describe(
+      "Override the target board for auto-placement. If omitted, uses the active board (selected in the web UI).",
+    ),
 };
 
 interface GenerateResponse {
@@ -48,7 +62,7 @@ interface GenerateResponse {
   modelId?: string;
   status?: string;
   outputUrl?: string;
-  /** Some sync models return data immediately. */
+  cost?: string;
   result?: unknown;
   error?: string;
 }
@@ -64,6 +78,8 @@ export async function generateTool(
     endFrame?: string;
     inputAudio?: string;
     generationOptions?: Record<string, unknown>;
+    add_to_board?: boolean;
+    board_id?: string;
   },
 ) {
   const body = {
@@ -91,22 +107,47 @@ export async function generateTool(
 
   // Sync result — output ready immediately
   if (data.outputUrl) {
+    const lines: (string | null)[] = [
+      `✓ generation complete (sync)`,
+      `model:    ${args.model}`,
+      data.generationId ? `id:       ${data.generationId}` : null,
+      `output:   ${data.outputUrl}`,
+    ];
+
+    // Auto-place on board (default true)
+    if (args.add_to_board ?? true) {
+      const outputType = inferOutputType(args.model, data.outputUrl);
+      const placed = await placeAssetOnBoard(config, {
+        outputUrl: data.outputUrl,
+        outputType,
+        modelId: args.model,
+        prompt: args.prompt,
+        cost: data.cost,
+        targetBoardId: args.board_id,
+      });
+
+      if (placed.ok) {
+        lines.push(``);
+        lines.push(`✓ placed on board ${placed.boardName ?? placed.boardId}`);
+        lines.push(`Open motionboards.vercel.app to see it on your canvas.`);
+      } else {
+        lines.push(``);
+        lines.push(
+          `⚠ asset generated but could not auto-place on board: ${placed.reason}`,
+        );
+        lines.push(
+          `It's still in your generations history — open MotionBoards to drag it onto a canvas.`,
+        );
+      }
+    } else {
+      lines.push(``);
+      lines.push(
+        `Asset is in your generations history. Open MotionBoards to drag it onto a canvas.`,
+      );
+    }
+
     return {
-      content: [
-        {
-          type: "text" as const,
-          text: [
-            `✓ generation complete (sync)`,
-            `model:    ${args.model}`,
-            data.generationId ? `id:       ${data.generationId}` : null,
-            `output:   ${data.outputUrl}`,
-            "",
-            "The asset is now in your generations history. Open MotionBoards to drag it onto your canvas.",
-          ]
-            .filter(Boolean)
-            .join("\n"),
-        },
-      ],
+      content: [{ type: "text" as const, text: lines.filter(Boolean).join("\n") }],
     };
   }
 
@@ -132,7 +173,7 @@ export async function generateTool(
     };
   }
 
-  // Fallback — return whatever the API gave us
+  // Fallback
   return {
     content: [
       {
@@ -141,6 +182,18 @@ export async function generateTool(
       },
     ],
   };
+}
+
+function inferOutputType(modelId: string, url: string): "image" | "video" | "audio" {
+  const m = modelId.toLowerCase();
+  if (/(veo|seedance|t2v|i2v|s2e|video|lipsync|wan-)/.test(m)) return "video";
+  if (/(audio|tts|music|sfx|voice|demucs|mmaudio|ace-step|stable-audio)/.test(m)) return "audio";
+  if (/(banana|flux|gpt-image|t2i|i2i|image)/.test(m)) return "image";
+  // Fallback by extension
+  const lower = url.toLowerCase();
+  if (/\.(mp4|mov|webm)(\?|$)/.test(lower)) return "video";
+  if (/\.(mp3|wav|m4a|ogg)(\?|$)/.test(lower)) return "audio";
+  return "image";
 }
 
 function errorResult(message: string) {

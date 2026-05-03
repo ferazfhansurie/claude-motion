@@ -15,7 +15,7 @@ async function main(): Promise<void> {
   const config = loadClientConfig();
 
   const server = new McpServer({
-    name: "motionboards-mcp",
+    name: "claude-motion",
     version: VERSION,
   });
 
@@ -93,6 +93,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error("[motionboards-mcp] fatal:", err);
+  console.error("[claude-motion] fatal:", err);
   process.exit(1);
 });
